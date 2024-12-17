@@ -48,9 +48,7 @@ class Dense(Layer):
         :param dout: Градиенты функции потерь по отношению к выходу этого слоя (переданы из следующего слоя).
         :return: Градиенты по отношению к входным данным, весам и смещениям для использования в обновлении параметров.
         """
-        print("dout shape:", dout.shape)  # Debugging line
-        print("self.input_data shape:", self.input_data.shape)  # Debugging line
-        
+
         # Вычисляем градиенты для весов и смещений
         grad_weights = np.dot(self.input_data.T, dout)  # Градиент функции потерь по весам
         grad_bias = np.sum(dout, axis=0, keepdims=True)  # Градиент функции потерь по смещениям

@@ -9,3 +9,8 @@ def softmax(x):
 
 def leaky_relu(x, alpha=0.01):
         return np.maximum(alpha * x, x)
+
+def leaky_relu_gradient(x, alpha=0.01):
+    grad = np.ones_like(x)  # для x > 0 градиент = 1
+    grad[x < 0] = alpha     # для x < 0 градиент = alpha
+    return grad

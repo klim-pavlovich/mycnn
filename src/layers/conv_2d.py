@@ -2,8 +2,8 @@ import sys
 import os
 
 import numpy as np
-from .im2col import Im2Col
-from .layer import Layer
+from src.layers.im2col import Im2Col
+from src.layers.layer import Layer
 
 
 class Conv2D(Layer):
@@ -34,6 +34,7 @@ class Conv2D(Layer):
         # Инициализация для сверточных фильтров с использованием He-инициализации
         self.weights = np.random.randn(num_filters, self.kernel_height, self.kernel_width, self.input_channels) * np.sqrt(2. / (self.kernel_height * self.kernel_width * self.input_channels))
 
+        
         # Инициализация смещений для всех фильтров
         self.bias = np.zeros((num_filters,))
         
@@ -50,6 +51,7 @@ class Conv2D(Layer):
         batch_size, height, width, channels = input_images.shape
         out_h = (height + 2 * self.padding - self.kernel_height) // self.stride + 1
         out_w = (width + 2 * self.padding - self.kernel_width) // self.stride + 1
+    
 
         im2col_matrix = self.im2col.transform(input_images)
         filters_col = self.weights.reshape(self.num_filters, self.kernel_height * self.kernel_width * self.input_channels)
@@ -58,40 +60,43 @@ class Conv2D(Layer):
 
         if self.bias is not None:
             out += self.bias.reshape(1, 1, 1, self.num_filters)
-
         return out
 
     def backward(self, dout):
         """
         Обратное распространение для слоя свертки.
-        
+
         :param dout: Градиенты с следующего слоя, форма (batch_size, out_h, out_w, num_filters)
         :return: Градиенты по входным данным
         """
+        # Если получили кортеж от BatchNorm, берем только градиенты (dx)
+        if isinstance(dout, tuple):
+            dout = dout[0]
+
         batch_size, height, width, channels = self.input_data.shape
-        
+
         # Вычисляем размеры выходного тензора
         out_h = (height + 2 * self.padding - self.kernel_height) // self.stride + 1
         out_w = (width + 2 * self.padding - self.kernel_width) // self.stride + 1
-        
+
         # Преобразуем градиенты в удобную форму
         dout_reshaped = dout.reshape(-1, self.num_filters)  # (batch_size * out_h * out_w, num_filters)
-        
+
         # Получаем im2col представление входных данных
         im2col_matrix = self.im2col.transform(self.input_data)  # (batch_size * out_h * out_w, kernel_h * kernel_w * channels)
-        
+
         # Градиенты по весам
         self.grad_weights = np.dot(im2col_matrix.T, dout_reshaped)  # (kernel_h * kernel_w * channels, num_filters)
         self.grad_weights = self.grad_weights.reshape(self.kernel_height, self.kernel_width, channels, self.num_filters)
         self.grad_weights = self.grad_weights.transpose(3, 0, 1, 2)  # (num_filters, kernel_h, kernel_w, channels)
-        
+
         # Градиенты по смещению
         self.grad_bias = np.sum(dout_reshaped, axis=0)  # (num_filters,)
-        
+
         # Градиенты по входным данным
         weights_reshaped = self.weights.transpose(1, 2, 3, 0).reshape(-1, self.num_filters)  # (kernel_h * kernel_w * channels, num_filters)
         grad_col = np.dot(dout_reshaped, weights_reshaped.T)  # (batch_size * out_h * out_w, kernel_h * kernel_w * channels)
-        
+
         # Восстанавливаем форму градиентов через im2col
         grad_input = self.im2col.backward(grad_col, (batch_size, height, width, channels))
         return grad_input

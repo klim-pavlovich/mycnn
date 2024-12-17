@@ -17,5 +17,5 @@ def split_train_validation(X_train, Y_train, test_size=0.3, random_state=42):
     X_train_split, X_val_split, Y_train_split, Y_val_split = train_test_split(
         X_train, Y_train, test_size=test_size, random_state=random_state
     )
-    
+
     return X_train_split, X_val_split, Y_train_split, Y_val_split

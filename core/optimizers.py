@@ -11,38 +11,39 @@ def adjust_learning_rate(self, epoch, decay_rate=0.96, decay_epoch=10, warmup_ep
         # После warm-up уменьшаем learning rate
         self.learning_rate *= decay_rate
 
+class Adam:
+    def __init__(self, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8):
+        self.learning_rate = learning_rate
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+        self.m = {}  # Первый момент
+        self.v = {}  # Второй момент
+        self.t = 0   # Временной шаг
 
-def adam_update(self, grad_W_fc, grad_b_fc, grad_filters, grad_gamma, grad_beta):
-    """Адам-оптимизатор."""
-    # Обновление фильтров
-    self.m_filters = self.beta1 * self.m_filters + (1 - self.beta1) * grad_filters
-    self.v_filters = self.beta2 * self.v_filters + (1 - self.beta2) * (grad_filters ** 2)
+    def update(self, params, grads, layer_id):
+        """
+        Обновление параметров с помощью Adam.
 
-    # Обновление gamma и beta, если градиенты существуют
-    if grad_gamma is not None:
-        self.m_gamma = self.beta1 * self.m_gamma + (1 - self.beta1) * grad_gamma
-        self.v_gamma = self.beta2 * self.v_gamma + (1 - self.beta2) * (grad_gamma ** 2)
+        Args:
+            params: словарь параметров (weights, bias)
+            grads: словарь градиентов
+            layer_id: идентификатор слоя
+        """
+        if layer_id not in self.m:
+            self.m[layer_id] = {key: np.zeros_like(value) for key, value in params.items()}
+            self.v[layer_id] = {key: np.zeros_like(value) for key, value in params.items()}
 
-    if grad_beta is not None:
-        self.m_beta = self.beta1 * self.m_beta + (1 - self.beta1) * grad_beta
-        self.v_beta = self.beta2 * self.v_beta + (1 - self.beta2) * (grad_beta ** 2)
+        self.t += 1
 
-    # Обновление весов и смещений в полносвязном слое
-    self.m_W_fc = self.beta1 * self.m_W_fc + (1 - self.beta1) * grad_W_fc
-    self.v_W_fc = self.beta2 * self.v_W_fc + (1 - self.beta2) * (grad_W_fc ** 2)
+        for key in params:
+            # Обновляем моменты
+            self.m[layer_id][key] = self.beta1 * self.m[layer_id][key] + (1 - self.beta1) * grads[key]
+            self.v[layer_id][key] = self.beta2 * self.v[layer_id][key] + (1 - self.beta2) * (grads[key]**2)
 
-    self.m_b_fc = self.beta1 * self.m_b_fc + (1 - self.beta1) * grad_b_fc
-    self.v_b_fc = self.beta2 * self.v_b_fc + (1 - self.beta2) * (grad_b_fc ** 2)
+            # Корректируем смещение
+            m_hat = self.m[layer_id][key] / (1 - self.beta1**self.t)
+            v_hat = self.v[layer_id][key] / (1 - self.beta2**self.t)
 
-    # Обновление фильтров свертки
-    self.filters -= self.learning_rate * self.m_filters / (np.sqrt(self.v_filters) + self.epsilon)
-
-    if grad_gamma is not None:
-        self.gamma -= self.learning_rate * self.m_gamma / (np.sqrt(self.v_gamma) + self.epsilon)
-
-    if grad_beta is not None:
-        self.beta -= self.learning_rate * self.m_beta / (np.sqrt(self.v_beta) + self.epsilon)
-
-    # Обновление весов в полносвязном слое
-    self.W_fc -= self.learning_rate * self.m_W_fc / (np.sqrt(self.v_W_fc) + self.epsilon)
-    self.b_fc -= self.learning_rate * self.m_b_fc / (np.sqrt(self.v_b_fc) + self.epsilon)
+            # Обновляем параметры
+            params[key] -= self.learning_rate * m_hat / (np.sqrt(v_hat) + self.epsilon)

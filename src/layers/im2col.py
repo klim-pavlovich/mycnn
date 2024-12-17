@@ -30,14 +30,22 @@ class Im2Col:
         :param input_images: Входные изображения (batch_size, height, width, channels).
         :return: Развёрнутая матрица.
         """
-        # Применяем паддинг
-        input_images = self.apply_padding(input_images) if self.padding > 0 else input_images
-
+        # Сохраняем размеры входных данных
         batch_size, height, width, channels = input_images.shape
 
+        # Применяем паддинг
+        if self.padding > 0:
+            input_images = self.apply_padding(input_images)
+            height_padded = height + 2 * self.padding
+            width_padded = width + 2 * self.padding
+        else:
+            height_padded = height
+            width_padded = width
+
+
         # Размеры выходной матрицы после свертки с паддингом
-        out_height = (height + 2 * self.padding - self.kernel_height) // self.stride + 1
-        out_width = (width + 2 * self.padding - self.kernel_width) // self.stride + 1
+        out_height = (height_padded - self.kernel_height) // self.stride + 1
+        out_width = (width_padded - self.kernel_width) // self.stride + 1
 
         # Добавляем проверку на корректность размеров
         if out_height <= 0 or out_width <= 0:
