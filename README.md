@@ -239,15 +239,15 @@ F1-score: 0.9472
 5. Финальная модель
 
 Macro average metrics:
-Precision: 0.9469
-Recall: 0.9469
-F1-score: 0.9468
-AUC: 0.9964
+Precision: 0.9405
+Recall: 0.9400
+F1-score: 0.9402
+AUC: 0.9959
 
 Weighted average metrics:
-Precision: 0.9474
-Recall: 0.9472
-F1-score: 0.9472
+Precision: 0.9408
+Recall: 0.9407
+F1-score: 0.9407
 
 ### Закономерности
 
